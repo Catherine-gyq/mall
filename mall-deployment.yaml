@@ -1,0 +1,124 @@
+# 部署 mall-search 服务
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mall-search
+  labels:
+    app: mall-search
+spec:
+  replicas: 2  # 运行2个副本，实现高可用
+  selector:
+    matchLabels:
+      app: mall-search
+  template:
+    metadata:
+      labels:
+        app: mall-search
+    spec:
+      containers:
+        - name: mall-search
+          image: elizabethlandau/mall-search:latest  # 你的镜像地址
+          ports:
+            - containerPort: 8081
+          resources:  # 可选：资源限制
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+# 暴露 mall-search 服务
+apiVersion: v1
+kind: Service
+metadata:
+  name: mall-search-service
+spec:
+  selector:
+    app: mall-search
+  ports:
+    - protocol: TCP
+      port: 8081      # 服务访问端口
+      targetPort: 8081 # 容器内部端口
+  type: LoadBalancer  # 对外暴露（本地测试可改为 NodePort）
+---
+# 部署 mall-admin 服务
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mall-admin
+  labels:
+    app: mall-admin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mall-admin
+  template:
+    metadata:
+      labels:
+        app: mall-admin
+    spec:
+      containers:
+        - name: mall-admin
+          image: elizabethlandau/mall-admin:latest
+          ports:
+            - containerPort: 8080
+---
+# 暴露 mall-admin 服务
+apiVersion: v1
+kind: Service
+metadata:
+  name: mall-admin-service
+spec:
+  selector:
+    app: mall-admin
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: LoadBalancer
+---
+# 部署 mall-admin-web 前端服务
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mall-admin-web
+  labels:
+    app: mall-admin-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mall-admin-web
+  template:
+    metadata:
+      labels:
+        app: mall-admin-web
+    spec:
+      containers:
+        - name: mall-admin-web
+          image: elizabethlandau/mall-admin-web:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+---
+# 暴露 mall-admin-web 服务
+apiVersion: v1
+kind: Service
+metadata:
+  name: mall-admin-web-service
+spec:
+  selector:
+    app: mall-admin-web
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: LoadBalancer
